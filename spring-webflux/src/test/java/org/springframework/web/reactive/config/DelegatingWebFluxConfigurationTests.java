@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,13 @@ package org.springframework.web.reactive.config;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.core.ReactiveAdapterRegistry;
@@ -37,10 +38,7 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.bind.support.ConfigurableWebBindingInitializer;
 import org.springframework.web.reactive.accept.RequestedContentTypeResolverBuilder;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willAnswer;
@@ -51,9 +49,8 @@ import static org.mockito.Mockito.verify;
  *
  * @author Brian Clozel
  */
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class DelegatingWebFluxConfigurationTests {
-
-	private DelegatingWebFluxConfiguration delegatingConfig;
 
 	@Mock
 	private WebFluxConfigurer webFluxConfigurer;
@@ -67,10 +64,11 @@ public class DelegatingWebFluxConfigurationTests {
 	@Captor
 	private ArgumentCaptor<FormatterRegistry> formatterRegistry;
 
+	private DelegatingWebFluxConfiguration delegatingConfig;
 
-	@Before
+
+	@BeforeEach
 	public void setup() {
-		MockitoAnnotations.initMocks(this);
 		delegatingConfig = new DelegatingWebFluxConfiguration();
 		delegatingConfig.setApplicationContext(new StaticApplicationContext());
 		given(webFluxConfigurer.getValidator()).willReturn(null);
@@ -79,7 +77,7 @@ public class DelegatingWebFluxConfigurationTests {
 
 
 	@Test
-	public void requestMappingHandlerMapping() throws Exception {
+	public void requestMappingHandlerMapping() {
 		delegatingConfig.setConfigurers(Collections.singletonList(webFluxConfigurer));
 		delegatingConfig.requestMappingHandlerMapping(delegatingConfig.webFluxContentTypeResolver());
 
@@ -89,7 +87,7 @@ public class DelegatingWebFluxConfigurationTests {
 	}
 
 	@Test
-	public void requestMappingHandlerAdapter() throws Exception {
+	public void requestMappingHandlerAdapter() {
 		delegatingConfig.setConfigurers(Collections.singletonList(webFluxConfigurer));
 		ReactiveAdapterRegistry reactiveAdapterRegistry = delegatingConfig.webFluxAdapterRegistry();
 		ServerCodecConfigurer serverCodecConfigurer = delegatingConfig.serverCodecConfigurer();
@@ -106,14 +104,15 @@ public class DelegatingWebFluxConfigurationTests {
 		verify(webFluxConfigurer).addFormatters(formatterRegistry.capture());
 		verify(webFluxConfigurer).configureArgumentResolvers(any());
 
-		assertNotNull(initializer);
-		assertTrue(initializer.getValidator() instanceof LocalValidatorFactoryBean);
-		assertSame(formatterRegistry.getValue(), initializer.getConversionService());
-		assertEquals(13, codecsConfigurer.getValue().getReaders().size());
+		assertThat(initializer).isNotNull();
+		boolean condition = initializer.getValidator() instanceof LocalValidatorFactoryBean;
+		assertThat(condition).isTrue();
+		assertThat(initializer.getConversionService()).isSameAs(formatterRegistry.getValue());
+		assertThat(codecsConfigurer.getValue().getReaders().size()).isEqualTo(14);
 	}
 
 	@Test
-	public void resourceHandlerMapping() throws Exception {
+	public void resourceHandlerMapping() {
 		delegatingConfig.setConfigurers(Collections.singletonList(webFluxConfigurer));
 		willAnswer(invocation -> {
 			ResourceHandlerRegistry registry = invocation.getArgument(0);
@@ -127,7 +126,7 @@ public class DelegatingWebFluxConfigurationTests {
 	}
 
 	@Test
-	public void responseBodyResultHandler() throws Exception {
+	public void responseBodyResultHandler() {
 		delegatingConfig.setConfigurers(Collections.singletonList(webFluxConfigurer));
 		delegatingConfig.responseBodyResultHandler(
 				delegatingConfig.webFluxAdapterRegistry(),
@@ -139,7 +138,7 @@ public class DelegatingWebFluxConfigurationTests {
 	}
 
 	@Test
-	public void viewResolutionResultHandler() throws Exception {
+	public void viewResolutionResultHandler() {
 		delegatingConfig.setConfigurers(Collections.singletonList(webFluxConfigurer));
 		delegatingConfig.viewResolutionResultHandler(delegatingConfig.webFluxAdapterRegistry(),
 				delegatingConfig.webFluxContentTypeResolver());
